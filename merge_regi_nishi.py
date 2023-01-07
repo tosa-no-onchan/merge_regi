@@ -304,23 +304,42 @@ class MergeRegi:
         return cset
 
     #---------------------------
-    # set_node_value()
-    #--------------------------
-    def set_node_value(self,n_cur,v):
-        (key_word,value_x) = v.split('=')
+    # print_val
+    #---------------------------
+    def print_val(self,n_val):
+        #print("n_cur",n_cur)
+        #print(n_cur_name)
+        #print("n_val",n_val)
+        for x in n_val:
+            # python-registry/Registry/RegistryParse.py
+            #print(x)
+            #print(h.node_values(x))
+            # 1: String
+            # 2: hex(2):
+            # 4: dword:
+            v_type=self.h.value_type(x)
+            #print('  value_type:',self.h.value_type(x))
+            vx_type=self.ps.data_type_str(v_type[0])
+            #print('  >vx_type='+vx_type)
+            key_x=self.h.value_key(x)
+            #print('key_x:',key_x)
+            if v_type[0] == 1:
+                val_x=self.h.value_string(x)
+            elif v_type[0] == 4:
+                val_x=self.h.value_dword(x)
+            else:
+                val_x=self.h.value_string(x)
 
-        key_word=re.sub('\"', "", key_word)
-        print(key_word,value_x)
-
-        if value_x.startswith('\"'):
-           value_x=re.sub('\"', "", value_x)
-           print(value_x)
-        else:
-            ix = value_x.find(":")
-            if(ix != -1):
-                (val_type,value_x2) = value_x.split(':')
-                print("val_type:"+val_type)
-                print("value_x2:"+value_x2)
+            if v_type[0] == RegSZ:
+                print('  "'+key_x+'"="'+val_x+'"')
+            elif v_type[0] == RegExpandSZ:
+                print('  "'+key_x+'"=hex(2):"'+val_x+'"')
+            elif v_type[0] == RegDWord:
+                #format(s, '*^10')
+                print('  "'+key_x+'"=dword:'+format(val_x, '#08d'))
+            else:
+                #print('  '+key_x,'=',val_x)
+                print('  "'+key_x+'"='+vx_type+':',val_x)
     
     #---------------------------
     # search_node()
@@ -343,26 +362,10 @@ class MergeRegi:
 
         return True,n_cur
 
-    #------------------------------
-    # merge
-    #------------------------------
-    def merge(self):
-        #-------------------------
-        # read in mergeide.reg
-        #-------------------------
-        self.reg_list=self.get_reg_file(self.reg_file)
-
-        if False:
-            print("-------")
-            for key in self.reg_list.keys():
-                print(key)
-                val = self.reg_list[key]
-                for dt in val:
-                    print(dt)
-
-        # open hive with write mode
-        self.h = hivex.Hivex(self.path,write = True)
-
+    #---------------------------
+    # check_stat_position()
+    #--------------------------
+    def check_stat_position(self):
         #print(h)
         #dir(h)
         # hive
@@ -379,11 +382,9 @@ class MergeRegi:
         #print("cset_name=",cset_name)
 
         #print(h.node_get_child(h_root,cset))
-
         n_cset=self.h.node_get_child(h_root,cset_name)
 
         print('hive '+h_root_name+'\\'+cset_name)
-
 
         cset_child=self.h.node_children(n_cset)        # list []
         #print('0. ----",cset_name,'---- chiled') 
@@ -408,6 +409,30 @@ class MergeRegi:
             n=self.h.node_name(s)
             if n in ['atapi','IntelIde','PCIIde']:
                 print('    \\'+n)
+        return n_cset
+
+    #------------------------------
+    # merge
+    #------------------------------
+    def merge(self):
+        #-------------------------
+        # read in mergeide.reg
+        #-------------------------
+        self.reg_list=self.get_reg_file(self.reg_file)
+
+        if False:
+            print("-------")
+            for key in self.reg_list.keys():
+                print(key)
+                val = self.reg_list[key]
+                for dt in val:
+                    print(dt)
+
+        # open hive with write mode
+        self.h = hivex.Hivex(self.path,write = True)
+
+        # get start node
+        n_cset=self.check_stat_position()
 
         #--------------------------------
         # merege proc start
@@ -449,33 +474,7 @@ class MergeRegi:
             # test
             print('--- fetch -----')
             n_val=self.h.node_values(n_cur)
-            #print("n_cur",n_cur)
-            #print(n_cur_name)
-            #print("n_val",n_val)
-            for x in n_val:
-                # python-registry/Registry/RegistryParse.py
-                #print(x)
-                #print(h.node_values(x))
-                # 1: String
-                # 2: hex(2):
-                # 4: dword:
-                v_type=self.h.value_type(x)
-                #print('  value_type:',self.h.value_type(x))
-                vx_type=self.ps.data_type_str(v_type[0])
-                #print('  >vx_type='+vx_type)
-                key_x=self.h.value_key(x)
-                #print('key_x:',key_x)
-                if v_type[0] == 1:
-                    val_x=self.h.value_string(x)
-                elif v_type[0] == RegDWord:
-                    val_x=self.h.value_dword(x)
-                elif v_type[0] == RegExpandSZ:
-                    #val_x=self.h.value_multiple_strings(x)
-                    val_x=self.h.value_string(x)
-                else:
-                    val_x=self.h.value_string(x)
-
-                print('  '+key_x+'='+vx_type+':',val_x)
+            self.print_val(n_val)
 
             #print(h.node_get_value(n_cur,"ClassGUID"))
             #print(h.node_get_value(n_cur,"Service"))
@@ -507,51 +506,8 @@ class MergeRegi:
         # open hive with write mode
         self.h = hivex.Hivex(self.path)
 
-        #print(h)
-        #dir(h)
-        # hive
-        # $$$PROTO.HIV\ControlSet001\Control
-        #
-        # linux.reg
-        # [HKEY_LOCAL_MACHINE/SYSTEM/ControlSet001/Control/
-
-        h_root = self.h.root()
-        h_root_name=self.h.node_name(h_root)     # h_root_name:$$$PROTO.HIV
-        #print("h_root_name:",h_root_name)
-
-        cset_name=self.get_current_control_set(self.h)    # cset=ControlSet001
-        #print("cset_name=",cset_name)
-
-        #print(h.node_get_child(h_root,cset))
-
-        n_cset=self.h.node_get_child(h_root,cset_name)
-
-        print('hive '+h_root_name+'\\'+cset_name)
-
-
-        cset_child=self.h.node_children(n_cset)        # list []
-        #print('0. ----",cset_name,'---- chiled') 
-        for s in cset_child:
-            n=self.h.node_name(s)
-            if n in ['Control','Services']:
-                print('  \\'+n)
-
-        print('  --- Control --- chiled')
-        # [HKEY_LOCAL_MACHINE/SYSTEM/ControlSet001/Control
-        n_control=self.h.node_get_child(n_cset,'Control')
-        n_control_child=self.h.node_children (n_control)        # list []
-        for s in n_control_child:
-            n=self.h.node_name(s)
-            if n in ['CriticalDeviceDatabase']:
-                print('    \\'+n)
-
-        print('  --- Services --- chiled')
-        n_services=self.h.node_get_child(n_cset,'Services')
-        n_services_child=self.h.node_children (n_services)        # list []
-        for s in n_services_child:
-            n=self.h.node_name(s)
-            if n in ['atapi','IntelIde','PCIIde']:
-                print('    \\'+n)
+        # get start node
+        n_cset=self.check_stat_position()
 
         #--------------------------------
         # compare proc start
@@ -588,8 +544,7 @@ class MergeRegi:
                 print('--- nothing -----')
                 continue
 
-            n_cur_name=self.h.node_name(n_cur)     # current node name
-
+            #n_cur_name=self.h.node_name(n_cur)     # current node name
 
             # https://github.com/digitalocean/hivex/blob/do/trusty/ChangeLog
             # 325 	rather than spitting out "no 'key' element in dictionary".
@@ -598,47 +553,12 @@ class MergeRegi:
             # test
             print('--- fetch -----')
             n_val=self.h.node_values(n_cur)
-            #print("n_cur",n_cur)
-            #print(n_cur_name)
-            #print("n_val",n_val)
-            for x in n_val:
-                # python-registry/Registry/RegistryParse.py
-                #print(x)
-                #print(h.node_values(x))
-                # 1: String
-                # 2: hex(2):
-                # 4: dword:
-                v_type=self.h.value_type(x)
-                #print('  value_type:',self.h.value_type(x))
-                vx_type=self.ps.data_type_str(v_type[0])
-                #print('  >vx_type='+vx_type)
-                key_x=self.h.value_key(x)
-                #print('key_x:',key_x)
-                if v_type[0] == 1:
-                    val_x=self.h.value_string(x)
-                elif v_type[0] == 4:
-                    val_x=self.h.value_dword(x)
-                else:
-                    val_x=self.h.value_string(x)
-
-                if v_type[0] == RegSZ:
-                    print('  "'+key_x+'"="'+val_x+'"')
-                elif v_type[0] == RegExpandSZ:
-                    print('  "'+key_x+'"=hex(2):"'+val_x+'"')
-                elif v_type[0] == RegDWord:
-                    format(s, '*^10')
-                    print('  "'+key_x+'"=dword:'+format(val_x, '#08d'))
-                else:
-                    #print('  '+key_x,'=',val_x)
-                    print('  "'+key_x+'"='+vx_type+':',val_x)
-
+            self.print_val(n_val)
             #print(h.node_get_value(n_cur,"ClassGUID"))
             #print(h.node_get_value(n_cur,"Service"))
-
         
         # close hiv
         del self.h
-
 
 if __name__ == "__main__":
 
