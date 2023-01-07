@@ -5,7 +5,7 @@ PC: Ubuntu Mate 20.04
   
 #### 1. copy the WindowsXP Hiv file to work holder.    
     $ sudo mount -t ntfs /dev/sdb? /mnt/backup  
-    $ copy /mnt/backup/WINDOWS/System32/config/system ./xp_system.new  
+    $ cp /mnt/backup/WINDOWS/System32/config/system ./xp_system.new  
   
 #### 2. edit merge_regi_nishi.py    
     change the following variables accroding to your env.  
@@ -29,6 +29,6 @@ PC: Ubuntu Mate 20.04
     $ python3 merge_regi_nishi.py    
 
 #### 5. save to Windows XP    
-    $ copy /mnt/backup/WINDOWS/System32/config/system /mnt/backup/WINDOWS/System32/config/system.backup  
-    $ copy ./xp_system.new /mnt/backup/WINDOWS/System32/config/system  
+    $ mv /mnt/backup/WINDOWS/System32/config/system /mnt/backup/WINDOWS/System32/config/system.backup  
+    $ cp ./xp_system.new /mnt/backup/WINDOWS/System32/config/system  
     $ sudo umount /mnt/backup  
